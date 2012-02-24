@@ -98,9 +98,9 @@ def least_square_sequence(dx, dy, data):
 
     result = []
 
-    for i in xrange((N-3)/2 + 1):
-        tmp = data[i:N-i, i:N-i]
-        result.append(least_square_fit(dx, dy, tmp))
+    while data.shape[0] > 2:
+        result.append(least_square_fit(dx, dy, data))
+        data = data[1:-1, 1:-1]
         stderr.write(".")
 
     stderr.write("\n")
