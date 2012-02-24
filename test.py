@@ -6,25 +6,28 @@ x = np.linspace(-1,1,N)
 y = x.copy()
 
 xx, yy = np.meshgrid(x,y)
-data = xx + yy + xx*yy + np.random.randn(xx.shape[0], xx.shape[1])
+data = xx + yy + xx*yy + 0.5 * np.random.randn(xx.shape[0], xx.shape[1])
 
 coeffs = least_square_fit(2.0/(N-1), 2.0/(N-1), data)
 
-xx = np.linspace(-1,1,101)
-yy = xx.copy()
+print "f(x,y) = %3.3f + %3.3f x + %3.3f y + %3.3f xy" % tuple(coeffs[0])
+
+xxx = np.linspace(-1,1,101)
+yyy = xxx.copy()
 
 z = np.zeros((101,101))
 
 for j in xrange(101):
     for i in xrange(101):
-        z[j,i] = bilinear_eval(coeffs, xx[i], yy[j])
+        z[j,i] = bilinear_eval(coeffs, xxx[i], yyy[j])
 
 from pylab import *
 
 pcolormesh(x,y,data)
 colorbar()
+grid(True)
 
-cs = contour(xx,yy,z,10,colors='black', linestyles='solid', linewidths=2)
+cs = contour(xxx,yyy,z,21,colors='black', linewidths=2)
 clabel(cs)
 
 axes().set_aspect('equal')
