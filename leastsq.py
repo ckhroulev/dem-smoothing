@@ -69,18 +69,15 @@ def least_square_fit(dx, dy, data):
     i = (N - 1) / 2
 
     try:
-        uH, s, vH = dictionary[i]
+        u, s, v = dictionary[i]
     except:
         u, s, v = np.linalg.svd(vandermonde_neighborhood(dx, dy, i), full_matrices = False)
-        uH = u.H
-        vH = v.H
-        dictionary[i] = uH, s, vH
+        dictionary[i] = u, s, v
 
-    w = np.dot(uH, data.flatten()) / s
+    w = np.dot(data.flatten(), u)
+    w /= s
 
-    x = vH * w.H
-
-    return np.array(x.H)
+    return np.asarray(w * v)
 
 def least_square_sequence(dx, dy, data):
     """
