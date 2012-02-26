@@ -22,7 +22,7 @@ for j in xrange(N):
     for i in xrange(N):
         z[j,i] = bilinear_eval(C, x[i], y[j])
 
-figure(N)
+figure(1)
 pcolormesh(x, y, data)
 grid(True)
 hold(True)
