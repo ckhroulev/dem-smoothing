@@ -12,7 +12,7 @@ print "Trying to open '%s'" % sys.argv[1]
 nc = NC(sys.argv[1], 'r')
 
 # we need to know longitudes and latitudes corresponding to our grid
-proj = Proj(nc.projection)
+proj = Proj(str(nc.projection))
 
 x = nc.variables['x'][:]
 y = nc.variables['y'][:]
