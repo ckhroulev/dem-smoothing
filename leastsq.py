@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import numpy as np
-from sys import stderr
+
+dictionary = {}
+n_params = 5                            # bilinear + gradient magnitude
 
 def vandermonde_bilinear_row(x, y):
     """
@@ -43,7 +45,9 @@ def vandermonde_neighborhood(dx, dy, N):
 
     return vandermonde(vandermonde_bilinear_row, xx.flat, yy.flat)
 
-dictionary = {}
+def clear_precomputed_svds():
+    global dictionary
+    dictionary = {}
 
 def least_square_fit(dx, dy, data):
     """
@@ -103,3 +107,40 @@ def least_square_sequence(dx, dy, data):
         data = data[1:-1, 1:-1]
 
     return result
+
+def smooth(dem, dx, dy, n_levels):
+    """
+    Smooths the 'dem' on a regular grid with spacing 'dx' and 'dy', using
+    n_levels levels of smoothing.
+    """
+    # reset the dictionary containing precomputed SVDs
+    clear_precomputed_svds()
+
+    # number of smoothing levels (and the half-width of the window):
+    M = n_levels
+    x_size = dem.shape[1]
+    y_size = dem.shape[0]
+
+    ii, jj = np.meshgrid(np.r_[-M:M+1],
+                         np.r_[-M:M+1])
+    output_data = np.zeros((dem.shape[0], dem.shape[1], M, n_params))
+
+    for j0 in xrange(M, y_size - M):
+        for i0 in xrange(M, x_size - M):
+            i = i0 + ii
+            j = j0 + jj
+
+            coeffs = least_square_sequence(dx, dy, dem[j,i])
+
+            result = []
+            for c in coeffs:
+                tmp = c[0]
+                tmp.append(np.sqrt(tmp[1]*tmp[1] + tmp[2]*tmp[2]))
+                result.append(tmp)
+
+            output_data[j0,i0] = result
+
+    # reset the dictionary containing precomputed SVDs
+    clear_precomputed_svds()
+
+    return output_data
