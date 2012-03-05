@@ -77,7 +77,7 @@ def least_square_fit(dx, dy, data):
     w = np.dot(data.flatten(), u)
     w /= s
 
-    return np.asarray(w * v)
+    return (w * v).tolist()
 
 def least_square_sequence(dx, dy, data):
     """
