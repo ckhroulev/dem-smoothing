@@ -1,5 +1,5 @@
 import numpy as np
-from leastsq import least_square_fit, bilinear_eval
+from leastsq import least_square_sequence
 import sys
 
 try:
@@ -17,39 +17,39 @@ dy = y[1] = y[0]
 
 dem = nc.variables['usurf'][:]
 
-N = 1
+nc.close()
 
-i = np.r_[-N:N+1]
-j = i.copy()
+# max window width:
+N = 11
 
-ii,jj = np.meshgrid(i,j)
+# number of smoothing levels:
+M = N
 
-dem_out = np.zeros_like(dem)
+# number of coefficients (bilinear approximation)
+P = 4
+
+ii, jj = np.meshgrid(np.r_[-N:N+1],
+                     np.r_[-N:N+1])
+dem_data = np.zeros((dem.shape[0], dem.shape[1], M, P))
 
 for j0 in xrange(N, y.size - N):
     for i0 in xrange(N, x.size - N):
         i = i0 + ii
         j = j0 + jj
 
-        data = np.array(dem[j,i], order='C')
+        data = dem[j,i]
 
-        coeffs = least_square_fit(dx, dy, data)
+        dem_data[j0,i0] = np.array(least_square_sequence(dx, dy, data)).squeeze()
 
-        dem_out[j,i] = np.sqrt(coeffs[0][1]**2 + coeffs[0][2]**2)
+nc = NC("output.nc", 'w')
 
+nc.createDimension('x', x.size)
+nc.createDimension('y', y.size)
+nc.createDimension('level', M)
+nc.createDimension('coeff', P)
 
-from pylab import *
+data = nc.createVariable('data', 'f8', ('y', 'x', 'level', 'coeff'))
 
-figure(1)
-pcolormesh(x, y, dem)
-colorbar()
-axis('tight')
-axes().set_aspect('equal')
+data[:] = dem_data
 
-figure(2)
-pcolormesh(x, y, dem_out)
-colorbar()
-axis('tight')
-axes().set_aspect('equal')
-
-show()
+nc.close()
