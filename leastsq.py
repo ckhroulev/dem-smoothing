@@ -101,8 +101,5 @@ def least_square_sequence(dx, dy, data):
     while data.shape[0] > 2:
         result.append(least_square_fit(dx, dy, data))
         data = data[1:-1, 1:-1]
-        stderr.write(".")
-
-    stderr.write("\n")
 
     return result

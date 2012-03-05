@@ -1,13 +1,13 @@
 import numpy as np
-
 from leastsq import least_square_fit, bilinear_eval
+import sys
 
 try:
     from netCDF4 import Dataset as NC
 except:
     from netCDF3 import Dataset as NC
 
-nc = NC("/Users/constantine/drainagebasin/data/searise-greenland.nc")
+nc = NC(sys.argv[1])
 
 x = nc.variables['x'][:]
 y = nc.variables['y'][:]
