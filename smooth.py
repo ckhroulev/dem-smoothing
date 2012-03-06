@@ -10,7 +10,7 @@ except:
 
 ## Set up the option parser
 parser = OptionParser()
-parser.usage = "usage: %prog input_file output_file"
+parser.usage = "usage: %prog n_levels input_file output_file"
 parser.description = """\
 This script computes smoothed surface elevation maps and saves data in
 output_file."""
@@ -18,8 +18,9 @@ output_file."""
 (options, args) = parser.parse_args()
 
 if len(args) == 2:
-    input_file = args[0]
-    output_file = args[1]
+    n_levels = int(args[0])
+    input_file = args[1]
+    output_file = args[2]
 else:
     print('wrong number of arguments, 2 expected')
     parser.print_help()
@@ -39,7 +40,6 @@ dy = y[1] - y[0]
 
 nc = NC(output_file, 'w')
 
-n_levels = 10
 nc.createDimension('x', x.size)
 nc.createDimension('y', y.size)
 nc.createDimension('level', n_levels)
