@@ -1,78 +1,76 @@
-from netCDF4 import Dataset as NC
+#!/usr/bin/env python
+from netCDF3 import Dataset as NC
 import numpy as np
+from optparse import OptionParser
 
-nc_dem = NC("data/greenland_5km.nc", 'r')
-nc_data = NC("data/greenland_5km_smooth.nc", 'r')
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
+
+## Set up the option parser
+parser = OptionParser()
+parser.usage = "usage: %prog misfit_file output_file"
+parser.description = """\
+This script computes the spatial scale minimizing the misfit."""
+
+(options, args) = parser.parse_args()
+
+if len(args) == 2:
+    data_file = args[0]
+    output_file = args[1]
+else:
+    print('wrong number of arguments, 2 expected')
+    parser.print_help()
+    exit(0)
+
+nc_data = NC(data_file, 'r')
 
 # Get data
-thk = np.squeeze(nc_dem.variables['thk'])
-usurf = np.squeeze(nc_dem.variables['usurf'])
-x = nc_dem.variables['x'][:]
-y = nc_dem.variables['y'][:]
+# note the lack of [:]; this might be slower, but avoids keeping several Gb of
+# data in memory
+misfit   = np.squeeze(nc_velocity.variables['misfit'])
 
-vel_mag = np.squeeze(nc_dem.variables['surfvelmag'])
-vel_x   = np.squeeze(nc_dem.variables['surfvelx'])
-vel_y   = np.squeeze(nc_dem.variables['surfvely'])
+x_size = misfit.shape[1]
+y_size = misfit.shape[0]
+n_levels = misfit.shape[2]
 
-coeffs = nc_data.variables['data']
+scale = np.zeros((y_size, x_size, n_levels))
 
-def compute_misfit(v1, v2, tol):
-    """Given 2 2D vectors v1 and v2 computes the misfit function
-    f(v1,v2) = 1 - cos(theta), where theta is the angle between vectors.
-    """
-    n1 = np.linalg.norm(v1)
-    n2 = np.linalg.norm(v2)
-
-    if (n1 > tol) and (n2 > tol):
-        return np.rad2deg(np.arccos(np.vdot(v1, v2) / (n1 * n2)))
-
-    return 180
-
-x_size = thk.shape[1]
-y_size = thk.shape[0]
-n_levels = coeffs.shape[2]
-
-scale = np.zeros_like(thk)
-misfit   = np.zeros_like(thk)
-
+levels = np.arange(n_levels)
 for j in xrange(y_size):
     for i in xrange(x_size):
-        # skip areas without ice
-        if thk[j,i] < 10:
-            scale[j,i] = -1
-            misfit[j,i] = -1
-            continue
 
         # skip areas with very little flow
-        if vel_mag[j,i] < 10:
+        if misfit[j,i] > 179.9:
             scale[j,i] = -1
-            misfit[j,i] = -1
             continue
 
-        v1 = [vel_x[j,i], vel_y[j,i]]
+        values = misfit[j,i]
+        p = np.polyfit(levels, values, 2)
+        xs = [0, -p[1]/(2*p[0]), n_levels-1]
+        ys = np.polyval(p, candidates)
 
-        cs = coeffs[j,i]
+        min_misfit = 180.0
+        min_misfit_scale = -1
+        for xx in xs:
+            tmp = np.polyval(p, xx)
+            if  tmp < min_misfit:
+                min_misfit_scale = xx
+                min_misfit = tmp
 
-        min_misfit = 3
-        index = 0
-        for k in xrange(n_levels - 1, -1, -1):
-            v2 = [-cs[k][1], -cs[k][2]] # flow *down* the gradient
-            error = compute_misfit(v1, v2, 1e-5)
-
-            if error < min_misfit:
-                index = k
-                min_misfit = error
-
-        scale[j,i] = n_levels - index
-        misfit[j,i] = error
+        scale[j,i] = min_misfit_scale
 
 import PISMNC
 
-nc = PISMNC.PISMDataset("scales.nc", 'w')
+nc = PISMNC.PISMDataset(output_file, 'w')
 
-nc.create_dimensions(x,y)
-nc.write_2d_field("scale", scale)
-nc.write_2d_field("misfit", misfit)
+nc.createDimension("x", x_size)
+nc.createDimension("y", y_size)
+nc.createDimension("level", n_levels)
+data = nc.createVariable('scale', 'f8', ('y', 'x', 'level'))
+
+data[:] = scale
 
 nc.close()
 

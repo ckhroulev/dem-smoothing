@@ -1,14 +1,45 @@
+#!/usr/bin/env python
 from netCDF3 import Dataset as NC
 import numpy as np
+from optparse import OptionParser
 
-nc_dem = NC("Greenland_velocity.nc", 'r')
-nc_data = NC("Greenland_smoothed.nc", 'r')
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
+
+## Set up the option parser
+parser = OptionParser()
+parser.usage = "usage: %prog velocity_file data_file output_file"
+parser.description = """\
+This script computes misfit in the flow direction using smoothed DEM data."""
+
+(options, args) = parser.parse_args()
+
+if len(args) == 3:
+    velocity_file = args[0]
+    data_file = args[1]
+    output_file = args[2]
+else:
+    print('wrong number of arguments, 3 expected')
+    parser.print_help()
+    exit(0)
+
+nc_velocity = NC(velocity_file, 'r')
+nc_data = NC(data_file, 'r')
 
 # Get data
-vel_mag = np.squeeze(nc_dem.variables['magnitude'])
-vel_x   = np.squeeze(nc_dem.variables['us'])
-vel_y   = np.squeeze(nc_dem.variables['vs'])
+try:
+    vel_mag = np.squeeze(nc_velocity.variables['magnitude'])
+    vel_x   = np.squeeze(nc_velocity.variables['us'])
+    vel_y   = np.squeeze(nc_velocity.variables['vs'])
+except:
+    vel_mag = np.squeeze(nc_velocity.variables['surfvelmag'])
+    vel_x   = np.squeeze(nc_velocity.variables['surfvelx'])
+    vel_y   = np.squeeze(nc_velocity.variables['surfvely'])
 
+# note the lack of [:]; this might be slower, but avoids keeping several Gb of
+# data in memory
 coeffs = nc_data.variables['data']
 
 def compute_misfit(v1, v2, tol):
@@ -21,7 +52,7 @@ def compute_misfit(v1, v2, tol):
     if (n1 > tol) and (n2 > tol):
         return np.rad2deg(np.arccos(np.vdot(v1, v2) / (n1 * n2)))
 
-    return 180
+    return 180.0
 
 x_size = vel_mag.shape[1]
 y_size = vel_mag.shape[0]
@@ -47,7 +78,7 @@ for j in xrange(y_size):
 
 import PISMNC
 
-nc = PISMNC.PISMDataset("misfit.nc", 'w')
+nc = PISMNC.PISMDataset(output_file, 'w')
 
 nc.createDimension("x", x_size)
 nc.createDimension("y", y_size)
