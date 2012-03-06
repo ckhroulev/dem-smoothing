@@ -47,6 +47,6 @@ nc.createDimension('coeff', leastsq.n_params)
 
 data = nc.createVariable('data', 'f8', ('y', 'x', 'level', 'coeff'))
 
-data[:] = leastsq.smooth(dem, dx, dy, n_levels)
+leastsq.smooth(dem, dx, dy, n_levels, data)
 
 nc.close()

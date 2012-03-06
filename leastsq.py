@@ -108,7 +108,7 @@ def least_square_sequence(dx, dy, data):
 
     return result
 
-def smooth(dem, dx, dy, n_levels):
+def smooth(dem, dx, dy, n_levels, output = None):
     """
     Smooths the 'dem' on a regular grid with spacing 'dx' and 'dy', using
     n_levels levels of smoothing.
@@ -123,7 +123,10 @@ def smooth(dem, dx, dy, n_levels):
 
     ii, jj = np.meshgrid(np.r_[-M:M+1],
                          np.r_[-M:M+1])
-    output_data = np.zeros((dem.shape[0], dem.shape[1], M, n_params))
+    if output is None:
+        output_data = np.zeros((dem.shape[0], dem.shape[1], M, n_params))
+    else:
+        output_data = output
 
     for j0 in xrange(M, y_size - M):
         for i0 in xrange(M, x_size - M):
