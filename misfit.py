@@ -1,18 +1,13 @@
-from netCDF4 import Dataset as NC
+from netCDF3 import Dataset as NC
 import numpy as np
 
-nc_dem = NC("data/greenland_5km.nc", 'r')
-nc_data = NC("data/greenland_5km_smooth.nc", 'r')
+nc_dem = NC("Greenland_velocity.nc", 'r')
+nc_data = NC("Greenland_smoothed.nc", 'r')
 
 # Get data
-thk = np.squeeze(nc_dem.variables['thk'])
-usurf = np.squeeze(nc_dem.variables['usurf'])
-x = nc_dem.variables['x'][:]
-y = nc_dem.variables['y'][:]
-
-vel_mag = np.squeeze(nc_dem.variables['surfvelmag'])
-vel_x   = np.squeeze(nc_dem.variables['surfvelx'])
-vel_y   = np.squeeze(nc_dem.variables['surfvely'])
+vel_mag = np.squeeze(nc_dem.variables['magnitude'])
+vel_x   = np.squeeze(nc_dem.variables['us'])
+vel_y   = np.squeeze(nc_dem.variables['vs'])
 
 coeffs = nc_data.variables['data']
 
@@ -28,18 +23,14 @@ def compute_misfit(v1, v2, tol):
 
     return 180
 
-x_size = thk.shape[1]
-y_size = thk.shape[0]
+x_size = vel_mag.shape[1]
+y_size = vel_mag.shape[0]
 n_levels = coeffs.shape[2]
 
-misfit   = np.zeros((thk.shape[0], thk.shape[1], n_levels))
+misfit   = np.zeros((y_size, x_size, n_levels))
 
 for j in xrange(y_size):
     for i in xrange(x_size):
-        # skip areas without ice
-        if thk[j,i] < 10:
-            misfit[j,i] = -1
-            continue
 
         # skip areas with very little flow
         if vel_mag[j,i] < 10:
@@ -58,7 +49,8 @@ import PISMNC
 
 nc = PISMNC.PISMDataset("misfit.nc", 'w')
 
-nc.create_dimensions(x,y)
+nc.createDimension("x", x_size)
+nc.createDimension("y", y_size)
 nc.createDimension("level", n_levels)
 data = nc.createVariable('data', 'f8', ('y', 'x', 'level'))
 
