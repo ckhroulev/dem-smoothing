@@ -28,7 +28,7 @@ nc_data = NC(data_file, 'r')
 # Get data
 # note the lack of [:]; this might be slower, but avoids keeping several Gb of
 # data in memory
-misfit   = np.squeeze(nc_data.variables['misfit'])
+misfit = nc_data.variables['misfit']
 
 x_size = misfit.shape[1]
 y_size = misfit.shape[0]
