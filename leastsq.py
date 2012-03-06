@@ -130,7 +130,12 @@ def smooth(dem, dx, dy, n_levels):
             i = i0 + ii
             j = j0 + jj
 
-            coeffs = least_square_sequence(dx, dy, dem[j,i])
+            try:
+                data = dem[j,i].filled(0)
+            except:
+                data = dem[j,i]
+
+            coeffs = least_square_sequence(dx, dy, data)
 
             result = []
             for c in coeffs:
