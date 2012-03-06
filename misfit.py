@@ -32,20 +32,17 @@ x_size = thk.shape[1]
 y_size = thk.shape[0]
 n_levels = coeffs.shape[2]
 
-scale = np.zeros_like(thk)
-misfit   = np.zeros_like(thk)
+misfit   = np.zeros((thk.shape[0], thk.shape[1], n_levels))
 
 for j in xrange(y_size):
     for i in xrange(x_size):
         # skip areas without ice
         if thk[j,i] < 10:
-            scale[j,i] = -1
             misfit[j,i] = -1
             continue
 
         # skip areas with very little flow
         if vel_mag[j,i] < 10:
-            scale[j,i] = -1
             misfit[j,i] = -1
             continue
 
@@ -53,26 +50,19 @@ for j in xrange(y_size):
 
         cs = coeffs[j,i]
 
-        min_misfit = 3
-        index = 0
-        for k in xrange(n_levels - 1, -1, -1):
+        for k in xrange(n_levels):
             v2 = [-cs[k][1], -cs[k][2]] # flow *down* the gradient
-            error = compute_misfit(v1, v2, 1e-5)
-
-            if error < min_misfit:
-                index = k
-                min_misfit = error
-
-        scale[j,i] = n_levels - index
-        misfit[j,i] = error
+            misfit[j,i,k] = compute_misfit(v1, v2, 1e-5)
 
 import PISMNC
 
-nc = PISMNC.PISMDataset("scales.nc", 'w')
+nc = PISMNC.PISMDataset("misfit.nc", 'w')
 
 nc.create_dimensions(x,y)
-nc.write_2d_field("scale", scale)
-nc.write_2d_field("misfit", misfit)
+nc.createDimension("level", n_levels)
+data = nc.createVariable('data', 'f8', ('y', 'x', 'level'))
+
+data[:] = misfit
 
 nc.close()
 
