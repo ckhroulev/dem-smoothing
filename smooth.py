@@ -17,7 +17,7 @@ output_file."""
 
 (options, args) = parser.parse_args()
 
-if len(args) == 2:
+if len(args) == 3:
     n_levels = int(args[0])
     input_file = args[1]
     output_file = args[2]
