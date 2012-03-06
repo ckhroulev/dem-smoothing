@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from netCDF3 import Dataset as NC
 import numpy as np
 from optparse import OptionParser
 
