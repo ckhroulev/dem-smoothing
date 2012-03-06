@@ -82,7 +82,7 @@ nc = PISMNC.PISMDataset(output_file, 'w')
 nc.createDimension("x", x_size)
 nc.createDimension("y", y_size)
 nc.createDimension("level", n_levels)
-data = nc.createVariable('data', 'f8', ('y', 'x', 'level'))
+data = nc.createVariable('misfit', 'f8', ('y', 'x', 'level'))
 
 data[:] = misfit
 
